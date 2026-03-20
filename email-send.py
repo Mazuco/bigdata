@@ -24,7 +24,7 @@ with DAG(
 
     email = EmailOperator(
         task_id = 'email_alert',
-        to = 'vitor.mazuco@yahoo.com.br',
+        to = 'teste@yahoo.com',
         subject = 'Email Alert',
         html_content = """ <h3>Email Test by Airflow</h3>""",
         dag=dag
