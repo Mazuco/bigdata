@@ -42,7 +42,16 @@ evaluator = MulticlassClassificationEvaluator(labelCol="label", predictionCol="p
 print("[INFO] Starting MLflow Tracking Run...")
 
 # Set an experiment name to group our runs
-mlflow.set_experiment("Ecommerce_Purchase_Predictor")
+experiment_name = "Ecommerce_Purchase_Predictor"
+# Verifica se o experimento já existe
+experiment = mlflow.get_experiment_by_name(experiment_name)
+
+if experiment is None:
+    # Cria o experimento forçando os artefatos a ficarem na pasta work do usuário
+    mlflow.create_experiment(experiment_name, artifact_location="file:///home/jovyan/work/mlruns")
+    mlflow.set_experiment(experiment_name)
+else:
+    mlflow.set_experiment(experiment_name)
 
 with mlflow.start_run(run_name="DecisionTree_V1"):
     
