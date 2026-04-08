@@ -5,6 +5,8 @@ from pyspark.sql.functions import from_json, col, current_timestamp
 import mlflow.spark
 
 # --- 1. Initialization ---
+mlflow.set_tracking_uri("http://192.168.15.72:5000")
+
 spark = SparkSession.builder \
     .appName("RealTime_Inference_Dual_Sink") \
     .config("spark.mongodb.output.uri", "mongodb://192.168.15.121:27017/ecommerce.predictions") \
@@ -12,7 +14,7 @@ spark = SparkSession.builder \
 spark.sparkContext.setLogLevel("WARN")
 
 # --- 2. Load Model ---
-run_id = "YOUR_RUN_ID_HERE" # Replace with your actual Run ID
+run_id = "23068ee102af44e9a6cacdc0d7db587e" # Replace with your actual Run ID
 model_uri = f"runs:/{run_id}/spark-model"
 ai_model = mlflow.spark.load_model(model_uri)
 
@@ -41,20 +43,28 @@ def save_to_dual_destination(batch_df, batch_id):
     if batch_df.count() > 0:
         print(f"[BATCH {batch_id}] Processing {batch_df.count()} records...")
         
-        # A. Save to HDFS (Parquet)
-        # Using append mode to build history
+        # A. Save to HDFS (Parquet) - O HDFS aceita tudo, então salvamos o batch completo
         batch_df.write \
             .format("parquet") \
             .mode("append") \
             .save("hdfs://namenode:9000/datalake/ecommerce_history/")
             
-        # B. Save to MongoDB (JSON)
-        # Stored in database 'ecommerce', collection 'predictions'
-        batch_df.write \
+        clean_df_for_mongo = batch_df.select(
+            "session_duration", 
+            "pages_visited", 
+            "processed_at", 
+            "prediction" # Ou o nome exato da coluna final de previsão do seu modelo
+        )
+
+        # B. Save to MongoDB (JSON) - Agora com os caminhos corretos!
+        clean_df_for_mongo.write \
             .format("mongodb") \
             .mode("append") \
+            .option("spark.mongodb.write.connection.uri", "mongodb://192.168.15.121:27017") \
+            .option("spark.mongodb.write.database", "ecommerce") \
+            .option("spark.mongodb.write.collection", "predictions") \
             .save()
-
+        
 # --- 5. Start Streaming ---
 print("[INFO] Dual-Sink Pipeline active. Listening to Kafka...")
 query = predictions_df.writeStream \
@@ -62,4 +72,5 @@ query = predictions_df.writeStream \
     .start()
 
 query.awaitTermination()
+
 
