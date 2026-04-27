@@ -13,7 +13,7 @@ def personalized_greeting():
 with DAG(
     dag_id='intro_class_vitor',
     start_date=datetime(2024, 1, 1),
-    schedule_interval='@daily',
+    schedule='@daily',
     catchup=False
 ) as dag:
 
