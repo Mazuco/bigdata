@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ollama-local": {
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": ["${workspaceFolder}/ollama_mcp_server.py"],
+      "env": {
+        "OLLAMA_HOST": "http://localhost:11434",
+        "LOCAL_CHAT_MODEL": "llama3.2:3b",
+        "LOCAL_EMBED_MODEL": "nomic-embed-text"
+      }
+    }
+  }
+}
